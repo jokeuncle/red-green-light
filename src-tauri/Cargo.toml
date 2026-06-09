@@ -1,6 +1,6 @@
 [package]
 name = "red-green-light"
-version = "0.1.0"
+version = "0.1.1"
 description = "Desktop traffic light reflecting Claude Code / Codex agent state"
 authors = ["jokeuncle"]
 edition = "2021"

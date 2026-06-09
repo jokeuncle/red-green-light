@@ -19,7 +19,9 @@ for arg in "$@"; do
     --skip-hooks) SKIP_HOOKS=1 ;;
     --skip-build) SKIP_BUILD=1 ;;
     -h|--help)
-      sed -n '2,12p' "$0"
+      # Print the leading comment block (the file header), stopping at the
+      # first non-comment line. Robust to comments being added/removed later.
+      awk '/^#!/ {next} /^#/ {print; next} {exit}' "$0"
       exit 0
       ;;
     *) echo "unknown arg: $arg" >&2; exit 2 ;;
@@ -66,6 +68,20 @@ fi
 DEST="/Applications/$APP_NAME"
 say "installing $APP_NAME to /Applications"
 if [ -d "$DEST" ]; then
+  # Quit a running instance before overwriting — otherwise rm -rf yanks the
+  # binary out from under a live process, which on macOS leaves a half-broken
+  # tray icon and an orphaned listener on port 7878.
+  if pgrep -x "red-green-light" >/dev/null 2>&1 \
+     || pgrep -f "/Applications/$APP_NAME" >/dev/null 2>&1; then
+    say "quitting running instance"
+    osascript -e 'tell application "Red Green Light" to quit' 2>/dev/null || true
+    # Give it a moment to release the port; force-kill if it ignored us.
+    for _ in 1 2 3 4 5; do
+      pgrep -x "red-green-light" >/dev/null 2>&1 || break
+      sleep 0.4
+    done
+    pkill -x "red-green-light" 2>/dev/null || true
+  fi
   rm -rf "$DEST"
 fi
 cp -R "$BUNDLE_PATH" "/Applications/"

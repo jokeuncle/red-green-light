@@ -90,24 +90,33 @@ impl AppState {
         build_snapshot(&g.sessions)
     }
 
-    /// Drop sessions that haven't reported in `idle_after_secs` and downgrade
-    /// stuck-working sessions to idle (defensive: a hook might never fire
-    /// Stop, e.g. if the CC process is killed). Called periodically.
-    pub async fn sweep(&self, idle_after_secs: u64) {
+    /// Periodic maintenance:
+    ///   1. Drop sessions whose last event was more than `retain_secs` ago.
+    ///   2. Downgrade *Working* sessions that have been silent for
+    ///      `idle_after_secs` to Idle. This is defensive — `Stop` should
+    ///      arrive, but a killed CC process won't deliver it.
+    ///
+    /// Waiting sessions are NEVER auto-downgraded. A waiting session is the
+    /// whole point of the red light: it means the user actually needs to do
+    /// something. Silently flipping it to green would hide a real signal.
+    pub async fn sweep(&self, idle_after_secs: u64, retain_secs: u64) {
         let now = now_secs();
         let mut g = self.inner.lock().await;
         let before = g.sessions.len();
-        g.sessions.retain(|_, s| now.saturating_sub(s.updated_at) < 3600);
+        g.sessions
+            .retain(|_, s| now.saturating_sub(s.updated_at) < retain_secs);
+        let mut downgraded = false;
         for s in g.sessions.values_mut() {
-            if s.state != SessionState::Idle
+            if s.state == SessionState::Working
                 && now.saturating_sub(s.updated_at) >= idle_after_secs
             {
                 s.state = SessionState::Idle;
                 s.last_event = Some("(timeout)".into());
+                downgraded = true;
             }
         }
         let after = g.sessions.len();
-        if before != after || true {
+        if before != after || downgraded {
             let snap = build_snapshot(&g.sessions);
             let _ = self.color_tx.send(snap.global);
             let _ = self.snapshot_tx.send(snap);

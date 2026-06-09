@@ -47,9 +47,19 @@ async fn get_state_stream(
     State(state): State<Arc<AppState>>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let rx = state.snapshot_watch();
-    let stream = WatchStream::new(rx).map(|snap| {
-        Ok(Event::default()
-            .data(serde_json::to_string(&snap).unwrap_or_else(|_| "{}".into())))
+    let stream = WatchStream::new(rx).filter_map(|snap| async move {
+        match serde_json::to_string(&snap) {
+            Ok(json) => Some(Ok(Event::default().data(json))),
+            Err(e) => {
+                // The Snapshot type derives Serialize over owned strings and
+                // enums — encoding shouldn't fail. If it does, log loudly
+                // and skip the event rather than emit "{}", which the
+                // client would deserialize into a snapshot with a missing
+                // `global` field and crash the React state update.
+                tracing::error!("failed to serialize snapshot: {e}");
+                None
+            }
+        }
     });
     Sse::new(stream).keep_alive(
         KeepAlive::new()

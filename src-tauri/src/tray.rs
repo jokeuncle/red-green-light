@@ -27,11 +27,14 @@ pub fn build<R: Runtime>(
     let show_i = MenuItem::with_id(app, "show", "显示悬浮窗", true, None::<&str>)?;
     let hide_i = MenuItem::with_id(app, "hide", "隐藏悬浮窗", true, None::<&str>)?;
     let about_i = MenuItem::with_id(app, "about", "Red Green Light", false, None::<&str>)?;
-    let sep = PredefinedMenuItem::separator(app)?;
+    // Each PredefinedMenuItem is a distinct OS-level handle; reusing one
+    // instance in two slots will only render once on some platforms.
+    let sep1 = PredefinedMenuItem::separator(app)?;
+    let sep2 = PredefinedMenuItem::separator(app)?;
     let quit_i = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
-        &[&about_i, &sep, &show_i, &hide_i, &sep, &quit_i],
+        &[&about_i, &sep1, &show_i, &hide_i, &sep2, &quit_i],
     )?;
 
     let tray = TrayIconBuilder::with_id("rgl-main")

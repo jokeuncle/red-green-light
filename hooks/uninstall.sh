@@ -22,12 +22,17 @@ cp "$SETTINGS" "$backup"
 echo "backup: $backup"
 
 tmp=$(mktemp)
-jq --arg url "$RGL_URL_PREFIX" '
+# Match any localhost http hook posting to /events on any port — this way a
+# user who customized RGL_PORT still gets their hooks cleaned up.
+jq '
+  def is_rgl_hook:
+    (.type // "") == "http"
+    and ((.url // "") | test("^https?://(127\\.0\\.0\\.1|localhost):[0-9]+/events$"));
   if .hooks == null then .
   else
     .hooks |= with_entries(
       .value |= map(
-        .hooks |= map(select((.url // "") != $url))
+        .hooks |= map(select(is_rgl_hook | not))
         | select((.hooks // []) | length > 0)
       )
       | select((.value | length) > 0)

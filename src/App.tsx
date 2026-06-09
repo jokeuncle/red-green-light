@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { TrafficLight, type LightState } from "./components/TrafficLight";
+import { DEFAULT_PORT } from "./lib/config";
 
 type ServerState = {
   global: LightState;
@@ -54,13 +55,18 @@ export default function App() {
     }
 
     // Tauri (or preview=1): connect to local HTTP SSE.
-    const port = 7878;
-    const es = new EventSource(`http://127.0.0.1:${port}/state/stream`);
+    const es = new EventSource(
+      `http://127.0.0.1:${DEFAULT_PORT}/state/stream`,
+    );
     es.onmessage = (ev) => {
       try {
         const data: ServerState = JSON.parse(ev.data);
         setState(data.global);
-        setSessionCount(data.sessions.length);
+        // The badge represents *active* sessions — idle ones are noise.
+        // Keeping them in the snapshot is useful for debugging via /state.
+        setSessionCount(
+          data.sessions.filter((s) => s.state !== "idle").length,
+        );
       } catch {
         // ignore malformed
       }

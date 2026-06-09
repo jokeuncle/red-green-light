@@ -44,6 +44,12 @@ mv "$tmp" "$SETTINGS"
 echo "merged Red Green Light hooks into $SETTINGS"
 echo
 echo "next steps:"
-echo "  1. Start the app: cd $(cd "$SNIPPET_DIR/.." && pwd) && pnpm tauri dev"
+# Prefer launching the installed .app if it exists (the root install.sh path);
+# fall back to `pnpm tauri dev` for contributors running this on its own.
+if [ -d "/Applications/Red Green Light.app" ]; then
+  echo "  1. Launch the app: open -a 'Red Green Light'"
+else
+  echo "  1. Start the app: cd $(cd "$SNIPPET_DIR/.." && pwd) && pnpm tauri dev"
+fi
 echo "  2. Open a Claude Code session — the menu-bar light turns yellow when it works,"
 echo "     red when it waits for input, and green when idle."

@@ -62,7 +62,13 @@ pub async fn apply(state: &AppState, ev: IncomingEvent) {
                 updated_at: now,
             });
             entry.state = next;
-            entry.source = ev.source.clone();
+            // Only set source on first insert. Otherwise the default
+            // ("claude-code") on an event from a different sender (Codex,
+            // a test script POSTing without `source`) would clobber the
+            // real value stored when the session was created.
+            if ev.source != default_source() {
+                entry.source = ev.source.clone();
+            }
             if ev.cwd.is_some() {
                 entry.cwd = ev.cwd.clone();
             }
