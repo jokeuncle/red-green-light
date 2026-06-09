@@ -41,30 +41,45 @@ Everything is local. No data leaves your machine.
 
 ## Install
 
-Prerequisites: macOS 11+ (Windows / Linux work in theory, untested), Node.js
-18+, pnpm, Rust toolchain, and `jq`.
+### For users — download a pre-built .dmg
+
+Grab the latest `.dmg` from the
+[Releases page](https://github.com/jokeuncle/red-green-light/releases), drag
+**Red Green Light.app** into `/Applications`, and run the hook installer:
 
 ```bash
-git clone git@github.com:jokeuncle/red-green-light.git
+git clone https://github.com/jokeuncle/red-green-light.git
 cd red-green-light
-pnpm install
-pnpm tauri dev          # development
-# or
-pnpm tauri build        # produces a distributable .app / .exe / .deb
-```
-
-Once the app is running, install the Claude Code hooks:
-
-```bash
 ./hooks/install.sh
 ```
 
-This idempotently merges the HTTP hook entries into `~/.claude/settings.json`
-and backs up the original file alongside it.
+The build is unsigned, so the first launch may need a right-click → *Open* to
+get past Gatekeeper.
 
-Verify everything is wired by opening a new Claude Code session and asking it
-to do anything — the menu-bar light should turn yellow as soon as the agent
-starts working.
+### For developers — build from source
+
+Prerequisites: macOS 11+ (Windows / Linux untested), Node.js 18+, pnpm, Rust
+toolchain, and `jq`.
+
+```bash
+git clone https://github.com/jokeuncle/red-green-light.git
+cd red-green-light
+./install.sh            # builds, copies to /Applications, installs hooks
+```
+
+The script accepts `--skip-build` and `--skip-hooks` for partial runs. For
+day-to-day development:
+
+```bash
+pnpm install
+pnpm tauri dev
+```
+
+### Verify
+
+Open a new Claude Code session and ask it to do anything — the menu-bar
+light should turn yellow as soon as the agent starts working, red when it
+asks you something, and green when it stops.
 
 To remove the hooks later:
 

@@ -13,8 +13,13 @@ type ServerState = {
   }>;
 };
 
-const TAURI = typeof (window as unknown as { __TAURI__?: unknown }).__TAURI__ !==
-  "undefined";
+// Tauri v2 doesn't inject `__TAURI__` by default, but it always exposes
+// `__TAURI_INTERNALS__` to the webview. Also fall back to a UA sniff so we
+// never accidentally fall into the cycling preview mode inside the real app.
+const TAURI =
+  typeof (window as unknown as { __TAURI_INTERNALS__?: unknown })
+    .__TAURI_INTERNALS__ !== "undefined" ||
+  /Tauri/.test(navigator.userAgent);
 
 export default function App() {
   const [state, setState] = useState<LightState>("green");
