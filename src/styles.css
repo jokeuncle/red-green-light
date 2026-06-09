@@ -1,0 +1,76 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+    sans-serif;
+  overflow: hidden;
+}
+
+/* Dev-only backdrop so the floating window is visible in a normal browser
+   while we iterate on the visual. In Tauri the window is transparent. */
+body.dev-preview {
+  background: radial-gradient(circle at 30% 20%, #2a2f3a 0%, #0e1116 70%);
+}
+
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-root {
+  position: relative;
+  width: 220px;
+  height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+.app-root:active {
+  cursor: grabbing;
+}
+
+/* Drag region propagation: the wrapper has data-tauri-drag-region. Inner
+   visual layers must NOT swallow mousedown, otherwise Tauri's drag handler
+   never fires. They are display-only — let pointer events fall through to
+   the wrapper. */
+.app-root > .tl-root,
+.app-root > .session-badge {
+  pointer-events: none;
+}
+
+.session-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a1d22;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}

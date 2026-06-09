@@ -1,0 +1,493 @@
+/*
+ * Skeuomorphic traffic light v2 — pushing for photo realism.
+ *
+ * Layer order (back → front) for each lamp cell:
+ *   1. .tl-spill        — colored ambient light bleeding onto the housing
+ *                          around the bulb (only when ON)
+ *   2. .tl-well         — recessed circular socket cut into the housing
+ *   3. .tl-glass        — wraps the actual lens
+ *      - .tl-bulb         the painted glass surface (lit or unlit)
+ *      - .tl-bulb-glow    soft outer halo (only when ON)
+ *      - .tl-glass-reflect a "sky" specular highlight (always)
+ *      - .tl-glass-rim    bevelled glass edge (always)
+ *   4. .tl-visor        — physical hood above the lens, with thickness:
+ *      - .tl-visor-shell  the hood itself (curved metal)
+ *      - .tl-visor-lip    front edge of the hood, catches light
+ *      - .tl-visor-shadow cast shadow falling onto the lens from the hood
+ */
+
+.tl-root {
+  position: relative;
+  width: 220px;
+  height: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 28px 36px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+}
+
+/* ===================================================================== */
+/* HANGER — the bracket at the top                                       */
+/* ===================================================================== */
+
+.tl-hanger {
+  position: relative;
+  width: 56px;
+  height: 22px;
+  margin-bottom: -6px;
+  background:
+    linear-gradient(180deg,
+      #4f545d 0%,
+      #2e3239 50%,
+      #1a1d22 100%);
+  border-radius: 6px 6px 3px 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px 0 0 rgba(0, 0, 0, 0.4),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.65),
+    0 2px 3px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+}
+
+.tl-hanger-bolt {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    #7a808a 0%,
+    #3a3e44 60%,
+    #14171c 100%
+  );
+  box-shadow:
+    inset 0 0 1px rgba(0, 0, 0, 0.8),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ===================================================================== */
+/* HOUSING — the main body                                               */
+/* ===================================================================== */
+
+.tl-housing {
+  position: relative;
+  width: 202px;
+  flex: 1;
+  padding: 26px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 30px;
+  isolation: isolate; /* allow blend modes inside to stay contained */
+  background:
+    /* very fine vertical brushed-metal striping */
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.012) 0px,
+      rgba(255, 255, 255, 0) 1px,
+      rgba(0, 0, 0, 0.02) 2px,
+      rgba(0, 0, 0, 0) 3px
+    ),
+    /* overall top→bottom dark grade */
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.01) 18%,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(0, 0, 0, 0.35) 100%),
+    /* base color with side shading for 3D feel */
+    linear-gradient(100deg,
+      #1f232a 0%,
+      #2a2e35 22%,
+      #1c1f24 55%,
+      #14171c 100%);
+
+  box-shadow:
+    /* top rim highlight */
+    inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.06),
+    inset -1px 0 0 rgba(0, 0, 0, 0.5),
+    /* inner bottom darken */
+    inset 0 -3px 6px rgba(0, 0, 0, 0.55),
+    /* outline */
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Faint inner glow ring — sells the matte-metal feel */
+.tl-housing-rim {
+  position: absolute;
+  inset: 6px;
+  border-radius: 24px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    inset 0 0 22px rgba(0, 0, 0, 0.35);
+}
+
+/* corner bolts */
+.tl-bolt {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #888d96 0%,
+    #444851 50%,
+    #1c1f24 100%
+  );
+  box-shadow:
+    inset 0 0 1px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.08);
+  z-index: 4;
+}
+.tl-bolt--tl { top: 12px; left: 12px; }
+.tl-bolt--tr { top: 12px; right: 12px; }
+.tl-bolt--bl { bottom: 12px; left: 12px; }
+.tl-bolt--br { bottom: 12px; right: 12px; }
+
+/* ===================================================================== */
+/* LAMP CELL                                                             */
+/* ===================================================================== */
+
+.tl-cell {
+  position: relative;
+  width: 100%;
+  height: 156px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- ambient color spill onto the housing (only when on) ------ */
+.tl-spill {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease-out;
+  mix-blend-mode: screen;
+  z-index: 1;
+}
+.tl-cell--red.is-on .tl-spill {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 60, 60, 0.42) 0%,
+    rgba(255, 60, 60, 0.22) 35%,
+    rgba(255, 60, 60, 0) 70%
+  );
+}
+.tl-cell--yellow.is-on .tl-spill {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 195, 40, 0.4) 0%,
+    rgba(255, 175, 30, 0.2) 35%,
+    rgba(255, 160, 20, 0) 70%
+  );
+}
+.tl-cell--green.is-on .tl-spill {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(60, 220, 110, 0.4) 0%,
+    rgba(40, 220, 100, 0.2) 35%,
+    rgba(30, 210, 90, 0) 70%
+  );
+}
+
+/* ===================================================================== */
+/* VISOR — physical hood with thickness                                  */
+/* ===================================================================== */
+
+.tl-visor {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 156px;
+  height: 36px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Hood shell — semi-ellipse, has clear thickness */
+.tl-visor-shell {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 156px;
+  height: 28px;
+  border-radius: 78px 78px 30px 30px / 28px 28px 8px 8px;
+  background:
+    linear-gradient(180deg,
+      #3a3e45 0%,
+      #2a2e35 35%,
+      #181b20 75%,
+      #0e1014 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset -1px 0 0 rgba(0, 0, 0, 0.45),
+    0 4px 5px rgba(0, 0, 0, 0.55);
+}
+
+/* Front lip of the hood — catches a sharp highlight along the front edge */
+.tl-visor-lip {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 156px;
+  height: 8px;
+  border-radius: 0 0 78px 78px / 0 0 8px 8px;
+  background:
+    linear-gradient(180deg,
+      #1d2026 0%,
+      #0a0c10 60%,
+      #050608 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.8),
+    0 3px 5px rgba(0, 0, 0, 0.55);
+}
+
+/* Shadow cast by the hood onto the upper portion of the lens */
+.tl-visor-shadow {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 18px;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0) 100%);
+  filter: blur(2px);
+  border-radius: 50%;
+  z-index: 6;
+}
+
+/* ===================================================================== */
+/* WELL — recessed lens socket                                           */
+/* ===================================================================== */
+
+.tl-well {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    #05060a 0%,
+    #0a0c10 60%,
+    #14171c 100%
+  );
+  box-shadow:
+    inset 0 5px 12px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Outer ring of the glass cover (bevel) */
+.tl-glass {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+}
+
+/* Bevelled glass rim — thin bright fresnel ring */
+.tl-glass-rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 2px rgba(255, 255, 255, 0.12);
+}
+
+/* Bulb (the colored disc) */
+.tl-bulb {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  transition:
+    background 240ms ease-out,
+    box-shadow 280ms ease-out,
+    filter 240ms ease-out;
+}
+
+/* Outer halo for ON state — sits behind the bulb but in front of housing */
+.tl-bulb-glow {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+  mix-blend-mode: screen;
+}
+
+/* Glass reflection (sky highlight + horizon line) — always visible */
+.tl-glass-reflect {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    /* horizon line — subtle */
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0) 38%,
+      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0) 62%),
+    /* primary sky highlight */
+    radial-gradient(
+      ellipse 40% 22% at 35% 22%,
+      rgba(255, 255, 255, 0.45) 0%,
+      rgba(255, 255, 255, 0.08) 60%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    /* small secondary specular dot */
+    radial-gradient(
+      circle 4px at 70% 30%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0) 80%
+    );
+}
+
+/* ====================================================================== */
+/* OFF states — dark colored glass with reflection                       */
+/* ====================================================================== */
+
+.tl-cell--red .tl-bulb {
+  background:
+    radial-gradient(circle at 38% 32%,
+      #4a1010 0%,
+      #2a0606 40%,
+      #160202 75%,
+      #0a0101 100%);
+  box-shadow:
+    inset 0 0 10px rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(255, 255, 255, 0.05),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.6);
+}
+.tl-cell--yellow .tl-bulb {
+  background:
+    radial-gradient(circle at 38% 32%,
+      #4a3a0c 0%,
+      #2a2206 40%,
+      #161003 75%,
+      #0a0701 100%);
+  box-shadow:
+    inset 0 0 10px rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(255, 255, 255, 0.05),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.6);
+}
+.tl-cell--green .tl-bulb {
+  background:
+    radial-gradient(circle at 38% 32%,
+      #0d3a1c 0%,
+      #06220f 40%,
+      #021407 75%,
+      #010a03 100%);
+  box-shadow:
+    inset 0 0 10px rgba(0, 0, 0, 0.7),
+    inset 0 3px 6px rgba(255, 255, 255, 0.05),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* ====================================================================== */
+/* ON states — bright bulb + outer halo                                  */
+/* ====================================================================== */
+
+.tl-cell--red.is-on .tl-bulb {
+  background:
+    radial-gradient(circle at 36% 28%,
+      #ffe6e6 0%,
+      #ff8585 12%,
+      #ff3030 38%,
+      #d80000 70%,
+      #7a0000 100%);
+  box-shadow:
+    inset 0 -6px 14px rgba(80, 0, 0, 0.55),
+    inset 0 3px 8px rgba(255, 255, 255, 0.32),
+    0 0 18px rgba(255, 50, 50, 0.95),
+    0 0 36px rgba(255, 50, 50, 0.55);
+}
+.tl-cell--red.is-on .tl-bulb-glow {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 80, 80, 0.6) 0%,
+    rgba(255, 60, 60, 0.35) 30%,
+    rgba(255, 50, 50, 0.12) 60%,
+    rgba(255, 50, 50, 0) 80%
+  );
+}
+
+.tl-cell--yellow.is-on .tl-bulb {
+  background:
+    radial-gradient(circle at 36% 28%,
+      #fff7d2 0%,
+      #ffe27a 12%,
+      #ffc81a 38%,
+      #c08400 75%,
+      #6e4600 100%);
+  box-shadow:
+    inset 0 -6px 14px rgba(80, 50, 0, 0.55),
+    inset 0 3px 8px rgba(255, 255, 255, 0.36),
+    0 0 18px rgba(255, 195, 40, 0.95),
+    0 0 36px rgba(255, 175, 30, 0.55);
+}
+.tl-cell--yellow.is-on .tl-bulb-glow {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 215, 80, 0.6) 0%,
+    rgba(255, 200, 50, 0.35) 30%,
+    rgba(255, 180, 30, 0.12) 60%,
+    rgba(255, 180, 30, 0) 80%
+  );
+}
+
+.tl-cell--green.is-on .tl-bulb {
+  background:
+    radial-gradient(circle at 36% 28%,
+      #e0ffe8 0%,
+      #74f095 12%,
+      #1ed856 38%,
+      #099030 70%,
+      #04501c 100%);
+  box-shadow:
+    inset 0 -6px 14px rgba(0, 60, 20, 0.55),
+    inset 0 3px 8px rgba(255, 255, 255, 0.32),
+    0 0 18px rgba(50, 230, 110, 0.95),
+    0 0 36px rgba(40, 220, 100, 0.55);
+}
+.tl-cell--green.is-on .tl-bulb-glow {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(100, 240, 140, 0.6) 0%,
+    rgba(50, 220, 100, 0.35) 30%,
+    rgba(40, 210, 90, 0.12) 60%,
+    rgba(40, 210, 90, 0) 80%
+  );
+}
